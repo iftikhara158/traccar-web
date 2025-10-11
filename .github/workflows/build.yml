@@ -1,19 +1,63 @@
 name: Build Project
 
 on:
-  push:
-    branches: [ master ]
-  pull_request:
-    branches: [ master ]
+  workflow_dispatch:            # ✅ Manual trigger
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
-    - uses: actions/setup-node@v4
-      with:
-        cache: npm
-        cache-dependency-path: package-lock.json
-    - run: npm ci
-    - run: npm run build
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'     # ✅ Specify Node version
+          cache: 'npm'
+          cache-dependency-path: package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build project
+        run: npm run build
+
+      # ✅ Upload build output so you can download it from the Actions page
+      - name: Upload build output
+        uses: actions/upload-artifact@v4
+        with:
+          name: traccar-web-build
+          path: |
+            modern/build
+            dist
+            build
+
+  # ✅ Optional: Create GitHub Release with build zip attached
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' || github.event_name == 'push'
+    steps:
+      - name: Download build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: traccar-web-build
+          path: ./build
+
+      - name: Zip build output
+        run: |
+          zip -r traccar-web-build.zip ./build
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: build-${{ github.run_number }}
+          name: Traccar Web Build ${{ github.run_number }}
+          body: |
+            ✅ Automated build of Traccar Web Frontend.
+            - Triggered by: ${{ github.actor }}
+            - Run number: ${{ github.run_number }}
+          files: traccar-web-build.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
