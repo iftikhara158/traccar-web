@@ -24,17 +24,17 @@ const MapPositions = ({ positions, onMapClick, onMarkerClick, showStatus, select
   const mapCluster = useAttributePreference('mapCluster', true);
   const directionType = useAttributePreference('mapDirection', 'selected');
 
-  // Function to get ignition-based status color
-  const getIgnitionStatusColor = (position, device) => {
+  // Function to get device status based on ignition
+  const getDeviceStatusByIgnition = (position, device) => {
     const ignition = position.attributes.ignition;
     
     if (ignition === true) {
-      return 'green'; // Ignition ON = Green
+      return 'online'; // Map ignition true to online status (which typically shows green)
     } else if (ignition === false) {
-      return 'red'; // Ignition OFF = Red
+      return 'offline'; // Map ignition false to offline status (which typically shows red)
     } else {
-      // For unknown/missing/empty ignition, fall back to original status color
-      return getStatusColor(device.status);
+      // For unknown/missing/empty ignition, use the original device status
+      return device.status;
     }
   };
 
@@ -52,13 +52,17 @@ const MapPositions = ({ positions, onMapClick, onMarkerClick, showStatus, select
         showDirection = selectedPositionId === position.id && position.course > 0;
         break;
     }
+    
+    // Get status based on ignition instead of device status
+    const status = getDeviceStatusByIgnition(position, device);
+    
     return {
       id: position.id,
       deviceId: position.deviceId,
       name: device.name,
       fixTime: formatTime(position.fixTime, 'seconds'),
       category: mapIconKey(device.category),
-      color: showStatus ? getIgnitionStatusColor(position, device) : 'neutral',
+      color: showStatus ? position.attributes.color || getStatusColor(status) : 'neutral',
       rotation: position.course,
       direction: showDirection,
     };
