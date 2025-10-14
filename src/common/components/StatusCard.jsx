@@ -164,7 +164,7 @@ const StatusCard = ({ deviceId, position, onClose, disableActions, desktopPaddin
     navigate(`/settings/geofence/${item.id}`);
   }, [navigate, position]);
 
-  // ✅ Smart Google Maps link opener with WebView detection
+  // ✅ ESLint-clean and WebView-safe Google Maps opener
   const handleGoogleMapsOpen = () => {
     setAnchorEl(null);
     if (!position) return;
@@ -172,36 +172,25 @@ const StatusCard = ({ deviceId, position, onClose, disableActions, desktopPaddin
     const lat = position.latitude;
     const lon = position.longitude;
 
-    // Detect WebView
-    const ua = navigator.userAgent || '';
-    const isAndroid = /Android/i.test(ua);
-    const isWebView =
-      (/(wv|WebView)/i.test(ua)) ||
-      (typeof window !== 'undefined' &&
-        window.navigator &&
-        window.navigator.standalone === false) ||
-      (/FBAN|FBAV|Instagram|Line/i.test(ua));
+    // Detect Android environment
+    const isAndroid = /Android/i.test(navigator.userAgent);
+    const isWebView = navigator.userAgent.includes('wv');
 
     const geoUrl = `geo:${lat},${lon}?q=${lat},${lon}`;
     const webUrl = `https://www.google.com/maps/search/?api=1&query=${lat},${lon}`;
 
-    // ✅ Open in web for WebView/in-app browsers
-    if (isWebView) {
-      window.open(webUrl, '_blank', 'noopener,noreferrer');
-      return;
-    }
-
-    // ✅ Try opening native app first, fallback to browser
-    const opened = window.open(geoUrl);
-    setTimeout(() => {
-      try {
-        if (!opened || opened.closed || typeof opened.closed === 'undefined') {
-          window.open(webUrl, '_blank', 'noopener,noreferrer');
-        }
-      } catch {
+    try {
+      if (isAndroid && !isWebView) {
+        // Open directly in Google Maps app on Android browsers
+        window.open(geoUrl, '_blank', 'noopener,noreferrer');
+      } else {
+        // Use web version for WebView, iOS, and desktop
         window.open(webUrl, '_blank', 'noopener,noreferrer');
       }
-    }, 700);
+    } catch {
+      // Always fall back to the web version if needed
+      window.open(webUrl, '_blank', 'noopener,noreferrer');
+    }
   };
 
   return (
@@ -325,7 +314,7 @@ const StatusCard = ({ deviceId, position, onClose, disableActions, desktopPaddin
         <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={() => setAnchorEl(null)}>
           {!readonly && <MenuItem onClick={handleGeofence}>{t('sharedCreateGeofence')}</MenuItem>}
 
-          {/* ✅ Fixed Google Maps opener */}
+          {/* ✅ Fixed WebView-safe Maps link */}
           <MenuItem onClick={handleGoogleMapsOpen}>
             {t('linkGoogleMaps')}
           </MenuItem>
