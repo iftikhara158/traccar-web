@@ -42,16 +42,21 @@ const MapPositions = ({
         ? selectedPositionId === position.id && position.course > 0
         : false;
 
+    // Determine icon color by ignition status
+    let color = 'neutral';
+    const ignition = position.attributes && position.attributes.ignition;
+
+    if (typeof ignition !== 'undefined') {
+      color = ignition ? 'green' : 'red';
+    }
+
     return {
       id: position.id,
       deviceId: position.deviceId,
       name: device.name,
       fixTime: formatTime(position.fixTime, 'seconds'),
       category: mapIconKey(device.category),
-      color:
-        showStatus && device.status
-          ? position.attributes.color || getStatusColor(device.status)
-          : 'neutral',
+      color,
       rotation: position.course,
       direction: showDirection,
     };
