@@ -11,30 +11,46 @@ const MapSelectedDevice = ({ mapReady }) => {
   const previousTime = usePrevious(currentTime);
   const previousId = usePrevious(currentId);
 
-  const selectZoom = useAttributePreference('web.selectZoom', 10);
-  const mapFollow = useAttributePreference('mapFollow', false);
+  const selectZoom = useAttributePreference('web.selectZoom', 14);
+  const mapFollow = useAttributePreference('mapFollow', true);
 
   const position = useSelector((state) => state.session.positions[currentId]);
-
   const previousPosition = usePrevious(position);
 
   useEffect(() => {
-    if (!mapReady) return;
+    if (!mapReady || !position) return;
 
-    const positionChanged = position && (!previousPosition || position.latitude !== previousPosition.latitude || position.longitude !== previousPosition.longitude);
+    const positionChanged =
+      position &&
+      (!previousPosition ||
+        position.latitude !== previousPosition.latitude ||
+        position.longitude !== previousPosition.longitude);
 
-    if ((currentId !== previousId || currentTime !== previousTime || (mapFollow && positionChanged)) && position) {
+    if (
+      currentId !== previousId ||
+      currentTime !== previousTime ||
+      (mapFollow && positionChanged)
+    ) {
       map.easeTo({
         center: [position.longitude, position.latitude],
         zoom: Math.max(map.getZoom(), selectZoom),
         offset: [0, -dimensions.popupMapOffset / 2],
+        duration: 800, // smoother animation
       });
     }
-  }, [currentId, previousId, currentTime, previousTime, mapFollow, position, selectZoom, mapReady]);
+  }, [
+    currentId,
+    previousId,
+    currentTime,
+    previousTime,
+    mapFollow,
+    position,
+    selectZoom,
+    mapReady,
+  ]);
 
   return null;
 };
 
 MapSelectedDevice.handlesMapReady = true;
-
 export default MapSelectedDevice;
