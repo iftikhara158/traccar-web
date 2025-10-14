@@ -52,7 +52,7 @@ const MapPositions = ({
       id: position.id,
       deviceId: position.deviceId,
       name: device.name,
-      fixTime: formatTime(position.fixTime, 'seconds'),
+      fixTime: position.fixTime,
       category: mapIconKey(device.category),
       color,
       rotation: position.course,
