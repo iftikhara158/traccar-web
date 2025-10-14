@@ -3,6 +3,7 @@ import { useSelector } from 'react-redux';
 import { useMediaQuery } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import { map } from './core/MapView';
+import { formatTime, getStatusColor } from '../common/util/formatter';
 import { mapIconKey } from './core/preloadImages';
 import { useAttributePreference } from '../common/util/preferences';
 import { useCatchCallback } from '../reactHelper';
@@ -23,8 +24,8 @@ const MapPositions = ({ positions, onMapClick, onMarkerClick, showStatus, select
   const mapCluster = useAttributePreference('mapCluster', true);
   const directionType = useAttributePreference('mapDirection', 'selected');
 
-  // Function to get ignition-based color
-  const getIgnitionColor = (position) => {
+  // Function to get ignition-based status color
+  const getIgnitionStatusColor = (position, device) => {
     const ignition = position.attributes.ignition;
     
     if (ignition === true) {
@@ -32,7 +33,8 @@ const MapPositions = ({ positions, onMapClick, onMarkerClick, showStatus, select
     } else if (ignition === false) {
       return 'red'; // Ignition OFF = Red
     } else {
-      return 'grey'; // Unknown/Missing/Empty = Grey
+      // For unknown/missing/empty ignition, fall back to original status color
+      return getStatusColor(device.status);
     }
   };
 
@@ -54,9 +56,9 @@ const MapPositions = ({ positions, onMapClick, onMarkerClick, showStatus, select
       id: position.id,
       deviceId: position.deviceId,
       name: device.name,
-      fixTime: position.fixTime,
+      fixTime: formatTime(position.fixTime, 'seconds'),
       category: mapIconKey(device.category),
-      color: showStatus ? getIgnitionColor(position) : 'neutral',
+      color: showStatus ? getIgnitionStatusColor(position, device) : 'neutral',
       rotation: position.course,
       direction: showDirection,
     };
