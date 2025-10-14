@@ -3,7 +3,6 @@ import { useSelector } from 'react-redux';
 import { useMediaQuery } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import { map } from './core/MapView';
-import { formatTime, getStatusColor } from '../common/util/formatter';
 import { mapIconKey } from './core/preloadImages';
 import { useAttributePreference } from '../common/util/preferences';
 import { useCatchCallback } from '../reactHelper';
@@ -55,7 +54,7 @@ const MapPositions = ({ positions, onMapClick, onMarkerClick, showStatus, select
       id: position.id,
       deviceId: position.deviceId,
       name: device.name,
-      fixTime: formatTime(position.fixTime, 'seconds'),
+      fixTime: position.fixTime,
       category: mapIconKey(device.category),
       color: showStatus ? getIgnitionColor(position) : 'neutral',
       rotation: position.course,
