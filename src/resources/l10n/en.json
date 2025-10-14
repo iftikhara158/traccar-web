@@ -266,7 +266,7 @@
     "linkStreetView": "Street View",
     "positionFixTime": "Fix Time",
     "positionDeviceTime": "Device Time",
-    "positionServerTime": "Server Time",
+    "positionServerTime": "Last Update",
     "positionValid": "Valid",
     "positionAccuracy": "Accuracy",
     "positionLatitude": "Latitude",
