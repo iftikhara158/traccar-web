@@ -49,7 +49,7 @@ const MapPositions = ({ positions, onMapClick, onMarkerClick, selectedPosition, 
       id: position.id,
       deviceId: position.deviceId,
       name: device.name,
-      fixTime: formatTime(position.fixTime, 'seconds'),
+      fixTime: position.fixTime,
       category: mapIconKey(device.category),
       color: iconColor, // use this for map paint
       rotation: position.course,
