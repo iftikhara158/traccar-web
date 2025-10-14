@@ -3,12 +3,13 @@ import { useSelector } from 'react-redux';
 import { useMediaQuery } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import { map } from './core/MapView';
+import { formatTime, getStatusColor } from '../common/util/formatter';
 import { mapIconKey } from './core/preloadImages';
 import { useAttributePreference } from '../common/util/preferences';
 import { useCatchCallback } from '../reactHelper';
 import { findFonts } from './core/mapUtil';
 
-const MapPositions = ({ positions, onMapClick, onMarkerClick, selectedPosition, titleField }) => {
+const MapPositions = ({ positions, onMapClick, onMarkerClick, showStatus, selectedPosition, titleField }) => {
   const id = useId();
   const clusters = `${id}-clusters`;
   const selected = `${id}-selected`;
@@ -23,7 +24,19 @@ const MapPositions = ({ positions, onMapClick, onMarkerClick, selectedPosition, 
   const mapCluster = useAttributePreference('mapCluster', true);
   const directionType = useAttributePreference('mapDirection', 'selected');
 
-  // ✅ minimal patch: ignition-based color logic
+  // Function to get ignition-based color
+  const getIgnitionColor = (position) => {
+    const ignition = position.attributes.ignition;
+    
+    if (ignition === true) {
+      return 'green'; // Ignition ON = Green
+    } else if (ignition === false) {
+      return 'red'; // Ignition OFF = Red
+    } else {
+      return 'grey'; // Unknown/Missing/Empty = Grey
+    }
+  };
+
   const createFeature = (devices, position, selectedPositionId) => {
     const device = devices[position.deviceId];
     let showDirection;
@@ -38,20 +51,13 @@ const MapPositions = ({ positions, onMapClick, onMarkerClick, selectedPosition, 
         showDirection = selectedPositionId === position.id && position.course > 0;
         break;
     }
-
-    // --- ignition-based color ---
-    const ignition = position.attributes?.ignition;
-    let iconColor = '#9e9e9e'; // grey by default
-    if (ignition === true) iconColor = '#00c853'; // green
-    else if (ignition === false) iconColor = '#d50000'; // red
-
     return {
       id: position.id,
       deviceId: position.deviceId,
       name: device.name,
-      fixTime: position.fixTime,
+      fixTime: formatTime(position.fixTime, 'seconds'),
       category: mapIconKey(device.category),
-      color: iconColor, // use this for map paint
+      color: showStatus ? getIgnitionColor(position) : 'neutral',
       rotation: position.course,
       direction: showDirection,
     };
@@ -112,7 +118,7 @@ const MapPositions = ({ positions, onMapClick, onMarkerClick, selectedPosition, 
         source,
         filter: ['!has', 'point_count'],
         layout: {
-          'icon-image': '{category}', // unchanged
+          'icon-image': '{category}-{color}',
           'icon-size': iconScale,
           'icon-allow-overlap': true,
           'text-field': `{${titleField || 'name'}}`,
@@ -123,7 +129,6 @@ const MapPositions = ({ positions, onMapClick, onMarkerClick, selectedPosition, 
           'text-size': 12,
         },
         paint: {
-          'icon-color': ['get', 'color'], // ✅ ignition color here
           'text-halo-color': 'white',
           'text-halo-width': 1,
         },
