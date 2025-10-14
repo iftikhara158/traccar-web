@@ -13,7 +13,7 @@ import BatteryCharging20Icon from '@mui/icons-material/BatteryCharging20';
 import ErrorIcon from '@mui/icons-material/Error';
 import { devicesActions } from '../store';
 import {
-  formatAlarm, formatBoolean, formatPercentage, getStatusColor,
+  formatAlarm, formatBoolean, formatPercentage, formatStatus, getStatusColor,
 } from '../common/util/formatter';
 import { useTranslation } from '../common/components/LocalizationProvider';
 import { mapIconKey, mapIcons } from '../map/core/preloadImages';
@@ -63,7 +63,7 @@ const DeviceRow = ({ devices, index, style }) => {
   const devicePrimary = useAttributePreference('devicePrimary', 'name');
   const deviceSecondary = useAttributePreference('deviceSecondary', '');
 
-  // ✅ Custom online/offline logic (3 hours threshold)
+  // ✅ Compute status (Online if last update ≤ 3 hours)
   const computeStatus = () => {
     if (!item.lastUpdate) return 'offline';
     const diff = Date.now() - new Date(item.lastUpdate).getTime();
@@ -72,13 +72,14 @@ const DeviceRow = ({ devices, index, style }) => {
   };
 
   const secondaryText = () => {
-    const status = computeStatus();
+    const computedStatus = computeStatus();
+    const displayStatus = formatStatus(computedStatus, t); // ✅ use Traccar's formatter for text
+    const colorClass = classes[getStatusColor(computedStatus)];
+
     return (
       <>
         {deviceSecondary && item[deviceSecondary] && `${item[deviceSecondary]} • `}
-        <span className={classes[getStatusColor(status)]}>
-          {t(status)}
-        </span>
+        <span className={colorClass}>{displayStatus}</span>
       </>
     );
   };
