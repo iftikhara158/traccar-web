@@ -13,7 +13,7 @@ import BatteryCharging20Icon from '@mui/icons-material/BatteryCharging20';
 import ErrorIcon from '@mui/icons-material/Error';
 import { devicesActions } from '../store';
 import {
-  formatAlarm, formatBoolean, formatPercentage, formatStatus, getStatusColor,
+  formatAlarm, formatBoolean, formatPercentage, getStatusColor,
 } from '../common/util/formatter';
 import { useTranslation } from '../common/components/LocalizationProvider';
 import { mapIconKey, mapIcons } from '../map/core/preloadImages';
@@ -63,18 +63,23 @@ const DeviceRow = ({ devices, index, style }) => {
   const devicePrimary = useAttributePreference('devicePrimary', 'name');
   const deviceSecondary = useAttributePreference('deviceSecondary', '');
 
-  // ✅ Compute status (Online if last update ≤ 3 hours)
+  // ✅ Compute online/offline using 3-hour rule
   const computeStatus = () => {
     if (!item.lastUpdate) return 'offline';
     const diff = Date.now() - new Date(item.lastUpdate).getTime();
-    const THREE_HOURS = 3 * 60 * 60 * 1000;
+    const THREE_HOURS = 3 * 60 * 60 * 1000; // 3 hours in ms
     return diff <= THREE_HOURS ? 'online' : 'offline';
   };
 
+  // ✅ Display only Online / Offline (no "x minutes ago")
   const secondaryText = () => {
     const computedStatus = computeStatus();
-    const displayStatus = formatStatus(computedStatus, t); // ✅ use Traccar's formatter for text
     const colorClass = classes[getStatusColor(computedStatus)];
+
+    const displayStatus =
+      computedStatus === 'online'
+        ? t('status.online') || 'Online'
+        : t('status.offline') || 'Offline';
 
     return (
       <>
