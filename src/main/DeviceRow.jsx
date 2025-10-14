@@ -12,18 +12,15 @@ import Battery20Icon from '@mui/icons-material/Battery20';
 import BatteryCharging20Icon from '@mui/icons-material/BatteryCharging20';
 import ErrorIcon from '@mui/icons-material/Error';
 import dayjs from 'dayjs';
-import relativeTime from 'dayjs/plugin/relativeTime';
 import { devicesActions } from '../store';
 import {
-  formatAlarm, formatBoolean, formatPercentage, formatStatus, getStatusColor,
+  formatAlarm, formatBoolean, formatPercentage, getStatusColor,
 } from '../common/util/formatter';
 import { useTranslation } from '../common/components/LocalizationProvider';
 import { mapIconKey, mapIcons } from '../map/core/preloadImages';
 import { useAdministrator } from '../common/util/permissions';
 import EngineIcon from '../resources/images/data/engine.svg?react';
 import { useAttributePreference } from '../common/util/preferences';
-
-dayjs.extend(relativeTime);
 
 const useStyles = makeStyles()((theme) => ({
   icon: {
@@ -67,17 +64,22 @@ const DeviceRow = ({ devices, index, style }) => {
   const devicePrimary = useAttributePreference('devicePrimary', 'name');
   const deviceSecondary = useAttributePreference('deviceSecondary', '');
 
+  // ✅ Custom online/offline logic (3 hours threshold)
+  const computeStatus = () => {
+    if (!item.lastUpdate) return 'offline';
+    const diff = Date.now() - new Date(item.lastUpdate).getTime();
+    const THREE_HOURS = 3 * 60 * 60 * 1000;
+    return diff <= THREE_HOURS ? 'online' : 'offline';
+  };
+
   const secondaryText = () => {
-    let status;
-    if (item.status === 'online' || !item.lastUpdate) {
-      status = formatStatus(item.status, t);
-    } else {
-      status = dayjs(item.lastUpdate).fromNow();
-    }
+    const status = computeStatus();
     return (
       <>
         {deviceSecondary && item[deviceSecondary] && `${item[deviceSecondary]} • `}
-        <span className={classes[getStatusColor(item.status)]}>{status}</span>
+        <span className={classes[getStatusColor(status)]}>
+          {t(status)}
+        </span>
       </>
     );
   };
