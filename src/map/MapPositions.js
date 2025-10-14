@@ -40,12 +40,14 @@ const MapPositions = ({
         ? selectedPositionId === position.id && position.course > 0
         : false;
 
-    // Determine icon color by ignition status
-    let color = 'neutral';
-    const ignition = position.attributes && position.attributes.ignition;
+    // Base category (like "car", "truck", etc.)
+    const category = mapIconKey(device.category);
 
+    // Determine color only for map paint — not for icon name
+    let color = '#808080'; // default gray (neutral)
+    const ignition = position.attributes && position.attributes.ignition;
     if (typeof ignition !== 'undefined') {
-      color = ignition ? 'green' : 'red';
+      color = ignition ? '#2ecc71' : '#e74c3c'; // green or red
     }
 
     return {
@@ -53,10 +55,10 @@ const MapPositions = ({
       deviceId: position.deviceId,
       name: device.name,
       fixTime: position.fixTime,
-      category: mapIconKey(device.category),
-      color,
+      category,
       rotation: position.course,
       direction: showDirection,
+      color,
     };
   };
 
@@ -124,9 +126,11 @@ const MapPositions = ({
         source,
         filter: ['!has', 'point_count'],
         layout: {
-          'icon-image': '{category}-{color}',
+          'icon-image': '{category}', // use your existing icon name
           'icon-size': iconScale,
           'icon-allow-overlap': true,
+          'icon-rotate': ['get', 'rotation'],
+          'icon-rotation-alignment': 'map',
           'text-field': `{${titleField || 'name'}}`,
           'text-anchor': 'bottom',
           'text-offset': [0, -2 * iconScale],
@@ -134,12 +138,13 @@ const MapPositions = ({
           'text-size': 12,
         },
         paint: {
+          'icon-color': ['get', 'color'], // dynamically color icon
           'text-halo-color': 'white',
           'text-halo-width': 1,
         },
       });
 
-      // Direction Arrow Layer
+      // Direction arrow
       map.addLayer({
         id: `direction-${source}`,
         type: 'symbol',
@@ -159,6 +164,7 @@ const MapPositions = ({
       map.on('click', source, onMarkerClickCallback);
     });
 
+    // Clusters
     map.addLayer({
       id: clusters,
       type: 'symbol',
