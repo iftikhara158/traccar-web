@@ -26,7 +26,6 @@ import SendIcon from '@mui/icons-material/Send';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import PendingIcon from '@mui/icons-material/Pending';
-
 import { useTranslation } from './LocalizationProvider';
 import RemoveDialog from './RemoveDialog';
 import PositionValue from './PositionValue';
@@ -103,7 +102,6 @@ const useStyles = makeStyles()((theme, { desktopPadding }) => ({
 
 const StatusRow = ({ name, content }) => {
   const { classes } = useStyles({ desktopPadding: 0 });
-
   return (
     <TableRow>
       <TableCell className={classes.cell}>
@@ -130,13 +128,10 @@ const StatusCard = ({ deviceId, position, onClose, disableActions, desktopPaddin
   const device = useSelector((state) => state.devices.items[deviceId]);
 
   const deviceImage = device?.attributes?.deviceImage;
-
   const positionAttributes = usePositionAttributes(t);
   const positionItems = useAttributePreference('positionItems', 'fixTime,address,speed,totalDistance');
 
-  // Removed navigationAppLink/navigationAppTitle since we keep only Google Maps link
   const [anchorEl, setAnchorEl] = useState(null);
-
   const [removing, setRemoving] = useState(false);
 
   const handleRemove = useCatch(async (removed) => {
@@ -166,6 +161,32 @@ const StatusCard = ({ deviceId, position, onClose, disableActions, desktopPaddin
     navigate(`/settings/geofence/${item.id}`);
   }, [navigate, position]);
 
+  // ✅ Smart Google Maps Open Handler
+  const handleGoogleMapsOpen = () => {
+    setAnchorEl(null);
+    if (!position) return;
+
+    const lat = position.latitude;
+    const lon = position.longitude;
+
+    // Try opening in the Google Maps app first
+    const appUrl = `geo:${lat},${lon}?q=${lat},${lon}`;
+    const webUrl = `https://www.google.com/maps/search/?api=1&query=${lat},${lon}`;
+
+    const opened = window.open(appUrl);
+
+    // Fallback: if WebView or browser blocks geo:// scheme
+    setTimeout(() => {
+      try {
+        if (!opened || opened.closed || typeof opened.closed === 'undefined') {
+          window.open(webUrl, '_blank', 'noopener,noreferrer');
+        }
+      } catch {
+        window.open(webUrl, '_blank', 'noopener,noreferrer');
+      }
+    }, 700);
+  };
+
   return (
     <>
       <div className={classes.root}>
@@ -182,11 +203,7 @@ const StatusCard = ({ deviceId, position, onClose, disableActions, desktopPaddin
                   className={`${classes.media} draggable-header`}
                   image={`/api/media/${device.uniqueId}/${deviceImage}`}
                 >
-                  <IconButton
-                    size="small"
-                    onClick={onClose}
-                    onTouchStart={onClose}
-                  >
+                  <IconButton size="small" onClick={onClose} onTouchStart={onClose}>
                     <CloseIcon fontSize="small" className={classes.mediaButton} />
                   </IconButton>
                 </CardMedia>
@@ -195,39 +212,40 @@ const StatusCard = ({ deviceId, position, onClose, disableActions, desktopPaddin
                   <Typography variant="body2" color="textSecondary">
                     {device.name}
                   </Typography>
-                  <IconButton
-                    size="small"
-                    onClick={onClose}
-                    onTouchStart={onClose}
-                  >
+                  <IconButton size="small" onClick={onClose} onTouchStart={onClose}>
                     <CloseIcon fontSize="small" />
                   </IconButton>
                 </div>
               )}
+
               {position && (
                 <CardContent className={classes.content}>
                   <Table size="small" classes={{ root: classes.table }}>
                     <TableBody>
-                      {positionItems.split(',').filter((key) => position.hasOwnProperty(key) || position.attributes.hasOwnProperty(key)).map((key) => (
-                        <StatusRow
-                          key={key}
-                          name={positionAttributes[key]?.name || key}
-                          content={(
-                            <PositionValue
-                              position={position}
-                              property={position.hasOwnProperty(key) ? key : null}
-                              attribute={position.hasOwnProperty(key) ? null : key}
-                            />
-                          )}
-                        />
-                      ))}
-
+                      {positionItems
+                        .split(',')
+                        .filter((key) => position.hasOwnProperty(key) || position.attributes.hasOwnProperty(key))
+                        .map((key) => (
+                          <StatusRow
+                            key={key}
+                            name={positionAttributes[key]?.name || key}
+                            content={(
+                              <PositionValue
+                                position={position}
+                                property={position.hasOwnProperty(key) ? key : null}
+                                attribute={position.hasOwnProperty(key) ? null : key}
+                              />
+                            )}
+                          />
+                        ))}
                     </TableBody>
                     <TableFooter>
                       <TableRow>
                         <TableCell colSpan={2} className={classes.cell}>
                           <Typography variant="body2">
-                            <Link component={RouterLink} to={`/position/${position.id}`}>{t('sharedShowDetails')}</Link>
+                            <Link component={RouterLink} to={`/position/${position.id}`}>
+                              {t('sharedShowDetails')}
+                            </Link>
                           </Typography>
                         </TableCell>
                       </TableRow>
@@ -235,46 +253,30 @@ const StatusCard = ({ deviceId, position, onClose, disableActions, desktopPaddin
                   </Table>
                 </CardContent>
               )}
+
               <CardActions classes={{ root: classes.actions }} disableSpacing>
                 <Tooltip title={t('sharedExtra')}>
-                  <IconButton
-                    color="secondary"
-                    onClick={(e) => setAnchorEl(e.currentTarget)}
-                    disabled={!position}
-                  >
+                  <IconButton color="secondary" onClick={(e) => setAnchorEl(e.currentTarget)} disabled={!position}>
                     <PendingIcon />
                   </IconButton>
                 </Tooltip>
                 <Tooltip title={t('reportReplay')}>
-                  <IconButton
-                    onClick={() => navigate(`/replay?deviceId=${deviceId}`)}
-                    disabled={disableActions || !position}
-                  >
+                  <IconButton onClick={() => navigate(`/replay?deviceId=${deviceId}`)} disabled={disableActions || !position}>
                     <RouteIcon />
                   </IconButton>
                 </Tooltip>
                 <Tooltip title={t('commandTitle')}>
-                  <IconButton
-                    onClick={() => navigate(`/settings/device/${deviceId}/command`)}
-                    disabled={disableActions}
-                  >
+                  <IconButton onClick={() => navigate(`/settings/device/${deviceId}/command`)} disabled={disableActions}>
                     <SendIcon />
                   </IconButton>
                 </Tooltip>
                 <Tooltip title={t('sharedEdit')}>
-                  <IconButton
-                    onClick={() => navigate(`/settings/device/${deviceId}`)}
-                    disabled={disableActions || deviceReadonly}
-                  >
+                  <IconButton onClick={() => navigate(`/settings/device/${deviceId}`)} disabled={disableActions || deviceReadonly}>
                     <EditIcon />
                   </IconButton>
                 </Tooltip>
                 <Tooltip title={t('sharedRemove')}>
-                  <IconButton
-                    color="error"
-                    onClick={() => setRemoving(true)}
-                    disabled={disableActions || deviceReadonly}
-                  >
+                  <IconButton color="error" onClick={() => setRemoving(true)} disabled={disableActions || deviceReadonly}>
                     <DeleteIcon />
                   </IconButton>
                 </Tooltip>
@@ -283,22 +285,16 @@ const StatusCard = ({ deviceId, position, onClose, disableActions, desktopPaddin
           </Rnd>
         )}
       </div>
+
       {position && (
         <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={() => setAnchorEl(null)}>
           {!readonly && <MenuItem onClick={handleGeofence}>{t('sharedCreateGeofence')}</MenuItem>}
 
-          {/* Only Google Maps link remains */}
-          <MenuItem
-            component="a"
-            target="_blank"
-            rel="noopener noreferrer"
-            href={`https://www.google.com/maps/search/?api=1&query=${position.latitude}%2C${position.longitude}`}
-            onClick={() => setAnchorEl(null)}
-          >
+          {/* ✅ Smart Google Maps Link */}
+          <MenuItem onClick={handleGoogleMapsOpen}>
             {t('linkGoogleMaps')}
           </MenuItem>
 
-          {/* Keep Share option if allowed */}
           {!shareDisabled && !user.temporary && (
             <MenuItem onClick={() => { setAnchorEl(null); navigate(`/settings/device/${deviceId}/share`); }}>
               <Typography color="secondary">{t('deviceShare')}</Typography>
@@ -306,12 +302,8 @@ const StatusCard = ({ deviceId, position, onClose, disableActions, desktopPaddin
           )}
         </Menu>
       )}
-      <RemoveDialog
-        open={removing}
-        endpoint="devices"
-        itemId={deviceId}
-        onResult={(removed) => handleRemove(removed)}
-      />
+
+      <RemoveDialog open={removing} endpoint="devices" itemId={deviceId} onResult={(removed) => handleRemove(removed)} />
     </>
   );
 };
