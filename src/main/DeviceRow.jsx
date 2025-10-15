@@ -130,7 +130,7 @@ const DeviceRow = ({ devices, index, style }) => {
                   {position.attributes.ignition ? (
                     <EngineIcon width={20} height={20} className={classes.success} />
                   ) : (
-                    <EngineIcon width={20} height={20} className={classes.neutral} />
+                    <EngineIcon width={20} height={20} className={classes.error} /> // Changed from neutral to error (red)
                   )}
                 </IconButton>
               </Tooltip>
@@ -149,7 +149,7 @@ const DeviceRow = ({ devices, index, style }) => {
                   )) || (
                     position.attributes.charge
                       ? (<BatteryCharging20Icon fontSize="small" className={classes.error} />)
-                      : (<Battery20Icon fontSize="small" className={classes.error} />)
+                      : (<Battery20Icon fontSize="small" className={classes.error} />) // Low battery already shows error (red)
                   )}
                 </IconButton>
               </Tooltip>
